@@ -21,10 +21,11 @@ var (
 )
 
 type TransactionData struct {
-	Hash  string
-	From  string
-	To    string
-	Value string
+	Hash      string
+	From      string
+	To        string
+	Value     string
+	timestamp uint64
 }
 
 func fetchTransactions(startBlock, endBlock *big.Int, walletAddress common.Address, wg *sync.WaitGroup, txDataChan chan<- TransactionData) {
@@ -51,10 +52,11 @@ func fetchTransactions(startBlock, endBlock *big.Int, walletAddress common.Addre
 
 			if from == walletAddress || to == walletAddress.Hex() {
 				txDataChan <- TransactionData{
-					Hash:  tx.Hash().Hex(),
-					From:  from.Hex(),
-					To:    to,
-					Value: tx.Value().String(),
+					Hash:      tx.Hash().Hex(),
+					From:      from.Hex(),
+					To:        to,
+					Value:     tx.Value().String(),
+					timestamp: block.Time(),
 				}
 			}
 		}
@@ -73,12 +75,13 @@ func writeCSV(txDataChan <-chan TransactionData, done <-chan bool) {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	writer.Write([]string{"Transaction Hash", "From", "To", "Value"})
+	writer.Write([]string{"Transaction Hash", "From", "To", "Value", "Timestamp"})
 
 	for {
 		select {
 		case txData := <-txDataChan:
-			writer.Write([]string{txData.Hash, txData.From, txData.To, txData.Value})
+			var timeInISO8601 string = time.Unix(int64(txData.timestamp), 0).Format(time.RFC3339)
+			writer.Write([]string{txData.Hash, txData.From, txData.To, txData.Value, timeInISO8601})
 		case <-done:
 			return
 		}
@@ -93,9 +96,9 @@ func main() {
 	}
 
 	// Global Signer
-	signer = types.NewEIP155Signer(big.NewInt(1))
+	signer = types.NewEIP155Signer(big.NewInt(222))
 
-	walletAddress := common.HexToAddress("Wallet Address")
+	walletAddress := common.HexToAddress("0xE0cfe78CEbeec4d2127A89b4Cf0A0a77DB4dEC5b")
 	startBlock := big.NewInt(0)
 	endBlock := big.NewInt(10000)
 	numWorkers := 10
