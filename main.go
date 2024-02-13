@@ -80,8 +80,11 @@ func writeCSV(txDataChan <-chan TransactionData, done <-chan bool) {
 	for {
 		select {
 		case txData := <-txDataChan:
-			var timeInISO8601 string = time.Unix(int64(txData.timestamp), 0).Format(time.RFC3339)
-			writer.Write([]string{txData.Hash, txData.From, txData.To, txData.Value, timeInISO8601})
+			if txData.Hash == "" {
+				continue
+			}
+			t := time.Unix(int64(txData.timestamp), 0).UTC().Format(time.RFC3339)
+			writer.Write([]string{txData.Hash, txData.From, txData.To, txData.Value, t})
 		case <-done:
 			return
 		}
@@ -96,7 +99,7 @@ func main() {
 	}
 
 	// Global Signer
-	signer = types.NewEIP155Signer(big.NewInt(222))
+	signer = types.LatestSignerForChainID(big.NewInt(222))
 
 	walletAddress := common.HexToAddress("0xE0cfe78CEbeec4d2127A89b4Cf0A0a77DB4dEC5b")
 	startBlock := big.NewInt(0)
@@ -115,10 +118,11 @@ func main() {
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		segmentStart := new(big.Int).SetInt64(startBlock.Int64() + int64(i)*blockSize)
-		segmentEnd := new(big.Int).SetInt64(segmentStart.Int64() + blockSize)
+		segmentEnd := new(big.Int).SetInt64(segmentStart.Int64() + blockSize - 1)
 		if i == numWorkers-1 {
 			segmentEnd.Set(endBlock)
 		}
+
 		go fetchTransactions(segmentStart, segmentEnd, walletAddress, &wg, txDataChan)
 	}
 
