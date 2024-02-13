@@ -105,9 +105,14 @@ func main() {
 
 	// Global Signer
 	signer = types.LatestSignerForChainID(big.NewInt(222))
+	latestBlock, err := ethClient.BlockByNumber(context.Background(), nil)
+	if err != nil {
+		log.Fatalf("Failed to get latest block: %v", err)
+	}
+	fmt.Printf("Latest Block: %v\n", latestBlock.Number())
 
 	startBlock := big.NewInt(0)
-	endBlock := big.NewInt(6000)
+	endBlock := latestBlock.Number()
 	numWorkers := 10
 
 	txDataChan := make(chan TransactionData, 1000)
