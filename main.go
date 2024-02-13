@@ -92,6 +92,11 @@ func writeCSV(txDataChan <-chan TransactionData, done <-chan bool) {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatalf("Usage: %s <wallet address>", os.Args[0])
+	}
+	walletAddress := common.HexToAddress(os.Args[1])
+
 	var err error
 	ethClient, err = ethclient.Dial("http://127.0.0.1:8545")
 	if err != nil {
@@ -101,7 +106,6 @@ func main() {
 	// Global Signer
 	signer = types.LatestSignerForChainID(big.NewInt(222))
 
-	walletAddress := common.HexToAddress(os.Args[1])
 	startBlock := big.NewInt(0)
 	endBlock := big.NewInt(6000)
 	numWorkers := 10
