@@ -101,9 +101,9 @@ func main() {
 	// Global Signer
 	signer = types.LatestSignerForChainID(big.NewInt(222))
 
-	walletAddress := common.HexToAddress("0xE0cfe78CEbeec4d2127A89b4Cf0A0a77DB4dEC5b")
+	walletAddress := common.HexToAddress(os.Args[1])
 	startBlock := big.NewInt(0)
-	endBlock := big.NewInt(10000)
+	endBlock := big.NewInt(6000)
 	numWorkers := 10
 
 	txDataChan := make(chan TransactionData, 1000)
